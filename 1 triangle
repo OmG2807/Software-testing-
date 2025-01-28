@@ -1,85 +1,23 @@
-import java.util.LinkedList;
-import java.util.Scanner;
+package com.example.project1;
 
-public class CRUD {
-    private LinkedList<Record> records = new LinkedList<>();
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-    public void add(String name, int id, int contact) {
-        records.add(new Record(name, id, contact));
-        System.out.println("Student added successfully!");
-    }
-
-    public void delete(int id) {
-        boolean removed = records.removeIf(record -> record.getId() == id);
-        if (removed) {
-            System.out.println("Record deleted successfully!");
-        } else {
-            System.out.println("ID not found!");
-        }
-    }
-
-    public void update(int id, Scanner input) {
-        for (Record record : records) {
-            if (record.getId() == id) {
-                System.out.print("Enter new name: ");
-                input.nextLine(); // Clear buffer
-                record.setName(input.nextLine());
-                System.out.print("Enter new contact: ");
-                record.setContact(input.nextInt());
-                System.out.println("Record updated successfully!");
-                return;
-            }
-        }
-        System.out.println("ID not found!");
-    }
-
-    public void display() {
-        if (records.isEmpty()) {
-            System.out.println("No records found!");
-        } else {
-            records.forEach(System.out::println);
-        }
-    }
-
+@SpringBootApplication
+public class Project1Application {
     public static void main(String[] args) {
-        CRUD manager = new CRUD();
-        Scanner input = new Scanner(System.in);
-
-        while (true) {
-            System.out.println("\n1. Add \n2. Delete \n3. Update \n4. Display \n5. Exit");
-            switch (input.nextInt()) {
-                case 1 -> {
-                    System.out.print("Name: ");
-                    String name = input.next();
-                    System.out.print("ID: ");
-                    int id = input.nextInt();
-                    System.out.print("Contact: ");
-                    int contact = input.nextInt();
-                    manager.add(name, id, contact);
-                }
-                case 2 -> {
-                    System.out.print("ID to delete: ");
-                    manager.delete(input.nextInt());
-                }
-                case 3 -> {
-                    System.out.print("ID to update: ");
-                    manager.update(input.nextInt(), input);
-                }
-                case 4 -> manager.display();
-                case 5 -> {
-                    System.out.println("Goodbye!");
-                    input.close();
-                    return;
-                }
-                default -> System.out.println("Invalid choice!");
-            }
-        }
+        SpringApplication.run(Project1Application.class, args);
     }
 }
 
-class Record {
+
+
+package com.example.project1;
+
+public class Record {
     private String name;
-    private int id, contact;
+    private int id;
+    private int contact;
 
     public Record(String name, int id, int contact) {
         this.name = name;
@@ -91,8 +29,16 @@ class Record {
         return id;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void setName(String name) {
         this.name = name;
+    }
+
+    public int getContact() {
+        return contact;
     }
 
     public void setContact(int contact) {
@@ -104,3 +50,84 @@ class Record {
         return "ID: " + id + ", Name: " + name + ", Contact: " + contact;
     }
 }
+
+
+
+package com.example.project1;
+
+import org.springframework.stereotype.Service;
+
+import java.util.LinkedList;
+import java.util.List;
+
+@Service
+public class CrudService {
+    private final LinkedList<Record> records = new LinkedList<>();
+
+    public String add(String name, int id, int contact) {
+        records.add(new Record(name, id, contact));
+        return "Student added successfully!";
+    }
+
+    public String delete(int id) {
+        boolean removed = records.removeIf(record -> record.getId() == id);
+        return removed ? "Record deleted successfully!" : "ID not found!";
+    }
+
+    public String update(int id, String newName, int newContact) {
+        for (Record record : records) {
+            if (record.getId() == id) {
+                record.setName(newName);
+                record.setContact(newContact);
+                return "Record updated successfully!";
+            }
+        }
+        return "ID not found!";
+    }
+
+    public List<Record> display() {
+        return records;
+    }
+}
+
+
+
+
+
+package com.example.project1;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/records")
+public class CrudController {
+
+    @Autowired
+    private CrudService crudService;
+
+    @PostMapping("/add")
+    public String addRecord(@RequestParam String name, @RequestParam int id, @RequestParam int contact) {
+        return crudService.add(name, id, contact);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public String deleteRecord(@PathVariable int id) {
+        return crudService.delete(id);
+    }
+
+    @PutMapping("/update/{id}")
+    public String updateRecord(@PathVariable int id, @RequestParam String name, @RequestParam int contact) {
+        return crudService.update(id, name, contact);
+    }
+
+    @GetMapping("/display")
+    public List<Record> displayRecords() {
+        return crudService.display();
+    }
+}
+
+
+
