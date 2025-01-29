@@ -1,23 +1,19 @@
-package com.example.project1;
+package com.example.demo4;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import jakarta.persistence.*;
+import org.springframework.stereotype.Component;
 
-@SpringBootApplication
-public class Project1Application {
-    public static void main(String[] args) {
-        SpringApplication.run(Project1Application.class, args);
-    }
-}
-
-
-
-package com.example.project1;
-
+@Entity
+@Table(name = "records")
+@Component
 public class Record {
-    private String name;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+    private String name;
     private int contact;
+
+    public Record() {} // Default constructor
 
     public Record(String name, int id, int contact) {
         this.name = name;
@@ -25,25 +21,11 @@ public class Record {
         this.contact = contact;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getContact() {
-        return contact;
-    }
-
-    public void setContact(int contact) {
-        this.contact = contact;
-    }
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public int getContact() { return contact; }
+    public void setContact(int contact) { this.contact = contact; }
 
     @Override
     public String toString() {
@@ -53,48 +35,64 @@ public class Record {
 
 
 
-package com.example.project1;
+
+
+package com.example.demo4;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface CrudRepository extends JpaRepository<Record, Integer> {
+}
+
+
+
+
+package com.example.demo4;
 
 import org.springframework.stereotype.Service;
-
-import java.util.LinkedList;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Service
 public class CrudService {
-    private final LinkedList<Record> records = new LinkedList<>();
 
-    public String add(String name, int id, int contact) {
-        records.add(new Record(name, id, contact));
+    @Autowired
+    private CrudRepository crudRepository; // Using JPA
+
+    public String addition(String name, int id, int contact) {
+        Record record = new Record(name, id, contact);
+        crudRepository.save(record);
         return "Student added successfully!";
     }
 
     public String delete(int id) {
-        boolean removed = records.removeIf(record -> record.getId() == id);
-        return removed ? "Record deleted successfully!" : "ID not found!";
-    }
-
-    public String update(int id, String newName, int newContact) {
-        for (Record record : records) {
-            if (record.getId() == id) {
-                record.setName(newName);
-                record.setContact(newContact);
-                return "Record updated successfully!";
-            }
+        if (crudRepository.existsById(id)) {
+            crudRepository.deleteById(id);
+            return "Record deleted successfully!";
         }
         return "ID not found!";
     }
 
+    public String update(int id, String newName, int newContact) {
+        return crudRepository.findById(id).map(record -> {
+            record.setName(newName);
+            record.setContact(newContact);
+            crudRepository.save(record);
+            return "Record updated successfully!";
+        }).orElse("ID not found!");
+    }
+
     public List<Record> display() {
-        return records;
+        return crudRepository.findAll();
     }
 }
 
 
 
 
-
-package com.example.project1;
+package com.example.demo4;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -102,7 +100,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/records")
+@RequestMapping("/crud")
 public class CrudController {
 
     @Autowired
@@ -110,7 +108,7 @@ public class CrudController {
 
     @PostMapping("/add")
     public String addRecord(@RequestParam String name, @RequestParam int id, @RequestParam int contact) {
-        return crudService.add(name, id, contact);
+        return crudService.addition(name, id, contact);
     }
 
     @DeleteMapping("/delete/{id}")
@@ -130,4 +128,17 @@ public class CrudController {
 }
 
 
+
+
+package com.example.demo4;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class Demo4Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Demo4Application.class, args);
+    }
+}
 
