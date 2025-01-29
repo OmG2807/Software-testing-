@@ -1,34 +1,145 @@
-package com.example.demo4;
+import java.util.Scanner;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        ContactService contactService = new ContactService();
 
-import java.util.List;
+        while (true) {
+            System.out.println("\n--- Contact Management System ---");
+            System.out.println("1. Add Contact");
+            System.out.println("2. View Contacts");
+            System.out.println("3. Update Contact");
+            System.out.println("4. Delete Contact");
+            System.out.println("5. Exit");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            
+            switch (choice) {
+                case 1: // Add Contact
+                    System.out.print("Enter ID: ");
+                    int id = scanner.nextInt();
+                    scanner.nextLine();
+                    System.out.print("Enter Name: ");
+                    String name = scanner.nextLine();
+                    System.out.print("Enter Contact Number: ");
+                    String contact = scanner.nextLine();
+                    contactService.addContact(new Contact(id, name, contact));
+                    break;
 
-@RestController
-@RequestMapping("/crud")
-public class CrudController {
+                case 2: // View Contacts
+                    System.out.println("\nList of Contacts:");
+                    for (Contact contactItem : contactService.getContacts()) {
+                        System.out.println(contactItem);
+                    }
+                    break;
 
-    @Autowired
-    private CrudService crudService;
+                case 3: // Update Contact
+                    System.out.print("Enter Contact ID to Update: ");
+                    int updateId = scanner.nextInt();
+                    scanner.nextLine();
+                    System.out.print("Enter New Name: ");
+                    String newName = scanner.nextLine();
+                    System.out.print("Enter New Contact Number: ");
+                    String newContact = scanner.nextLine();
 
-    @PostMapping("/add")
-    public String addRecord(@RequestParam String name, @RequestParam int id, @RequestParam int contact) {
-        return crudService.addition(name, id, contact);
-    }
+                    if (contactService.updateContact(updateId, newName, newContact)) {
+                        System.out.println("Contact updated successfully!");
+                    } else {
+                        System.out.println("Contact ID not found.");
+                    }
+                    break;
 
-    @DeleteMapping("/delete/{id}")
-    public String deleteRecord(@PathVariable int id) {
-        return crudService.delete(id);
-    }
+                case 4: // Delete Contact
+                    System.out.print("Enter Contact ID to Delete: ");
+                    int deleteId = scanner.nextInt();
+                    if (contactService.deleteContact(deleteId)) {
+                        System.out.println("Contact deleted successfully!");
+                    } else {
+                        System.out.println("Contact ID not found.");
+                    }
+                    break;
 
-    @PutMapping("/update/{id}")
-    public String updateRecord(@PathVariable int id, @RequestParam String name, @RequestParam int contact) {
-        return crudService.update(id, name, contact);
-    }
+                case 5: // Exit
+                    System.out.println("Exiting... Thank you!");
+                    scanner.close();
+                    return;
 
-    @GetMapping("/display")
-    public List<Record> displayRecords() {
-        return crudService.display();
+                default:
+                    System.out.println("Invalid choice. Please enter a valid option.");
+            }
+        }
     }
 }
+
+
+
+
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ContactService {
+    private final List<Contact> contacts = new ArrayList<>();
+
+    // Add Contact
+    public void addContact(Contact contact) {
+        contacts.add(contact);
+        System.out.println("Contact added successfully!");
+    }
+
+    // Get All Contacts
+    public List<Contact> getContacts() {
+        return contacts;
+    }
+
+    // Update Contact
+    public boolean updateContact(int id, String name, String contact) {
+        for (Contact c : contacts) {
+            if (c.getId() == id) {
+                c.setName(name);
+                c.setContact(contact);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Delete Contact
+    public boolean deleteContact(int id) {
+        return contacts.removeIf(contact -> contact.getId() == id);
+    }
+}
+
+
+
+
+
+public class Contact {
+    private int id;
+    private String name;
+    private String contact;
+
+    public Contact(int id, String name, String contact) {
+        this.id = id;
+        this.name = name;
+        this.contact = contact;
+    }
+
+    // Getters and Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getContact() { return contact; }
+    public void setContact(String contact) { this.contact = contact; }
+
+    @Override
+    public String toString() {
+        return "ID: " + id + ", Name: " + name + ", Contact: " + contact;
+    }
+}
+
