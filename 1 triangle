@@ -1,144 +1,101 @@
-package com.example.demo4;
+Project Explanation: Redis with Java (Maven)
 
-import jakarta.persistence.*;
-import org.springframework.stereotype.Component;
+This project demonstrates basic Redis operations using Java through the popular Jedis client. Below is a detailed breakdown of the project components.
 
-@Entity
-@Table(name = "records")
-@Component
-public class Record {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-    private String name;
-    private int contact;
+Project Structure
 
-    public Record() {} // Default constructor
+RedisProject/
+├── pom.xml
+└── src
+    └── main
+        └── java
+            └── com
+                └── example
+                    └── redis
+                        └── RedisExample.java
 
-    public Record(String name, int id, int contact) {
-        this.name = name;
-        this.id = id;
-        this.contact = contact;
-    }
+1. pom.xml
 
-    public int getId() { return id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public int getContact() { return contact; }
-    public void setContact(int contact) { this.contact = contact; }
+This is the Maven configuration file where we define:
+	•	The project dependencies
+	•	The Java version to use (17 in this case)
+	•	The Jedis dependency, which is required for working with Redis
 
-    @Override
-    public String toString() {
-        return "ID: " + id + ", Name: " + name + ", Contact: " + contact;
-    }
-}
+Key content in pom.xml:
 
+<dependency>
+    <groupId>redis.clients</groupId>
+    <artifactId>jedis</artifactId>
+    <version>4.4.3</version>
+</dependency>
 
+This ensures that Maven downloads and includes the Jedis library.
 
+2. Java File (RedisExample.java)
 
+This file contains the core logic to interact with the Redis server. Below is an explanation of each part:
 
-package com.example.demo4;
+try (Jedis jedis = new Jedis("localhost", 6379)) {
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+	•	Connects to a Redis server running locally on port 6379 (the default Redis port).
+	•	If the server is running, the connection will be established successfully.
 
-@Repository
-public interface CrudRepository extends JpaRepository<Record, Integer> {
-}
+Basic Redis Operations
+	1.	Check Redis availability with ping():
 
+System.out.println("Ping Response: " + jedis.ping());
 
+	•	Sends a ping request to the Redis server to confirm the connection.
+	•	Expected response: PONG
 
+	2.	Set and get a key-value pair:
 
-package com.example.demo4;
+jedis.set("key1", "Hello, Redis!");
+System.out.println("Stored key1: " + jedis.get("key1"));
 
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
-import java.util.List;
+	•	Stores a string value associated with a key (key1).
+	•	Fetches and prints the stored value.
 
-@Service
-public class CrudService {
+	3.	Increment a counter:
 
-    @Autowired
-    private CrudRepository crudRepository; // Using JPA
+jedis.set("counter", "1");
+jedis.incr("counter");
+System.out.println("Counter value: " + jedis.get("counter"));
 
-    public String addition(String name, int id, int contact) {
-        Record record = new Record(name, id, contact);
-        crudRepository.save(record);
-        return "Student added successfully!";
-    }
+	•	Sets an initial value for a counter (counter = 1).
+	•	Increments it using incr() and prints the result (2).
 
-    public String delete(int id) {
-        if (crudRepository.existsById(id)) {
-            crudRepository.deleteById(id);
-            return "Record deleted successfully!";
-        }
-        return "ID not found!";
-    }
+	4.	Delete a key:
 
-    public String update(int id, String newName, int newContact) {
-        return crudRepository.findById(id).map(record -> {
-            record.setName(newName);
-            record.setContact(newContact);
-            crudRepository.save(record);
-            return "Record updated successfully!";
-        }).orElse("ID not found!");
-    }
+jedis.del("key1");
+System.out.println("Deleted key1, check: " + jedis.get("key1"));
 
-    public List<Record> display() {
-        return crudRepository.findAll();
-    }
-}
+	•	Deletes the key1 from Redis.
+	•	Verifies deletion by trying to retrieve the value (should return null).
 
+3. Redis Server Setup
 
+To run this project, ensure you have a Redis server running locally:
+	•	Linux/macOS: Run redis-server in the terminal.
+	•	Windows: Run using WSL or use a Redis service like Docker.
 
+4. How to Run the Project
+	1.	Open the project in IntelliJ IDEA as a Maven project.
+	2.	Ensure Redis is running locally.
+	3.	Run the RedisExample.java file.
+	4.	Observe the outputs, such as key-value storage, counter increments, and deletion.
 
-package com.example.demo4;
+5. Expected Output
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+Connection Successful
+Ping Response: PONG
+Stored key1: Hello, Redis!
+Counter value: 2
+Deleted key1, check: null
 
-import java.util.List;
+Extending the Project
+	•	List Operations: Store lists using lpush and rpush.
+	•	Hash Operations: Store complex objects using hset and hget.
+	•	Sets: Store unique values using sadd.
 
-@RestController
-@RequestMapping("/crud")
-public class CrudController {
-
-    @Autowired
-    private CrudService crudService;
-
-    @PostMapping("/add")
-    public String addRecord(@RequestParam String name, @RequestParam int id, @RequestParam int contact) {
-        return crudService.addition(name, id, contact);
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public String deleteRecord(@PathVariable int id) {
-        return crudService.delete(id);
-    }
-
-    @PutMapping("/update/{id}")
-    public String updateRecord(@PathVariable int id, @RequestParam String name, @RequestParam int contact) {
-        return crudService.update(id, name, contact);
-    }
-
-    @GetMapping("/display")
-    public List<Record> displayRecords() {
-        return crudService.display();
-    }
-}
-
-
-
-
-package com.example.demo4;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class Demo4Application {
-    public static void main(String[] args) {
-        SpringApplication.run(Demo4Application.class, args);
-    }
-}
-
+This project is a good starting point for exploring Redis with Java for applications requiring in-memory data storage.
